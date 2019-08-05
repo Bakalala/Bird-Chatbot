@@ -1,0 +1,10 @@
+applications:
+- name: Bird ChatBot
+  disk_quota: 1G
+  env:
+    redacted_message: '[PRIVATE DATA HIDDEN]'
+  instances: 1
+  memory: 64M
+  routes:
+  - route: Bird-ChatBot.eu-gb.mybluemix.net
+  stack: cflinuxfs3
