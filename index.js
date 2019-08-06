@@ -2,6 +2,8 @@ const AssistantV2 = require('ibm-watson/assistant/v2');
 const PAGE_ACCESS_TOKEN = 'EAAGM47EckQcBAPFRZAXZBap5vqEcxIV3jP4GCWzaZBFq6P28ZAgZBv81kdY5ZAxRNXb2KcS7wtxNOo7VtYw3TueGS24ruHCz3IZCJhTnZCJs3wPyAXwvVNLxdgsV6ZCF6UAnlmNOa8D34jJEi4fG79eEbKWqoRM2JsXZC6VoDM4TglTGgKQs0lkY1Q'
 var express = require('express')
 var request = require('request')
+var base64 = require('node-base64-image')
+var fs = require('fs')
 var bodyParser = require("body-parser")
 var senderArr = [];
 var sessArr = [];
@@ -185,7 +187,6 @@ function handleMessage(sender_psid, received_message) {
                 callSendAPI(sender_psid, {
                   'text': "No response from watson"
                 })
-                doTheAction()
               } else {
                 callSendAPI(sender_psid, {
                   'text': answer
@@ -213,15 +214,47 @@ function handleMessage(sender_psid, received_message) {
 
         } else if (received_message.attachments) {
           //console.log(received_message.attachments[0].payload.url);
-          callSendAPI(sender_psid, {
-            "attachment": {
-              "type": "image",
-              "payload": {
-                "url": received_message.attachments[0].payload.url,
-                "is_reusable": true
-              }
-            }
-          })
+
+          let imageUrl = received_message.attachments[0].payload.url
+          // let buff = new Buffer.from(data)
+          // let base64data = buff.toString('base64') // holds the base64 image
+          // var jsonImage = {
+          //   'image': base64data
+          // }
+
+          let jsonImage
+
+
+          encode(imageUrl)
+            .then(jsonImage => {
+
+              request.post({
+                url: "https://flask-reliable-ardvark.cfapps.io/predict",
+                json: {
+                  image: jsonImage
+                }
+              }, function(error, response, body) {
+                console.log(body);
+              });
+
+
+            })
+
+
+
+
+
+
+
+          // callSendAPI(sender_psid, {
+          //   "attachment": {
+          //     "type": "image",
+          //     "payload": {
+          //       "url": received_message.attachments[0].payload.url,
+          //       "is_reusable": true
+          //     }
+          //   }
+          // })
           // Send image to network
           //get response from network
           //send response to watson
@@ -230,9 +263,9 @@ function handleMessage(sender_psid, received_message) {
           bird = 'parrot'
           status = 'true'
 
-          handleMessage(sender_psid, {
-            'text': "ok"
-          })
+          // handleMessage(sender_psid, {
+          //   'text': "ok"
+          // })
         }
       }
 
@@ -287,6 +320,21 @@ function callSendAPI(sender_psid, response) {
   });
 }
 
+function encode(data) {
+  var options = {
+    string: true
+  }
+  return new Promise(function(resolve, reject) {
+    base64.encode(data, options, function(err, image) {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(image)
+      }
+    })
+  })
+}
 
 
-app.listen(process.env.VCAP_APP_PORT || 1337, () => console.log('webhook is listening'));
+
+app.listen(process.env.PORT || 1337, () => console.log('webhook is listening'));
