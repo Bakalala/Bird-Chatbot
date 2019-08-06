@@ -4,6 +4,7 @@ var express = require('express')
 var request = require('request')
 var base64 = require('node-base64-image')
 var fs = require('fs')
+var https = require('https')
 var bodyParser = require("body-parser")
 var senderArr = [];
 var sessArr = [];
@@ -152,24 +153,26 @@ function sendMs(word, session_id) {
   })
 }
 
+
 function handleMessage(sender_psid, received_message) {
+
+
   var i = 0
   var flag = false;
 
   if (senderArr.length == 0) {
-
     senderArr.push(sender_psid);
     creatSess(0)
       .then(function() {
         sendMs(received_message.text, sessArr[0])
           .then(answer => {
             callSendAPI(sender_psid, {
-              'text': answer
+              'text': answer + " looooool"
             });
           })
       })
 
-  } else if (senderArr.length != 0) {
+  } else {
     for (i = 0; i < senderArr.length; i++) { //badawar law sender id mawgood fel array
       if (sender_psid == senderArr[i]) { // sender found
         flag = true;
@@ -187,10 +190,12 @@ function handleMessage(sender_psid, received_message) {
                 callSendAPI(sender_psid, {
                   'text': "No response from watson"
                 })
+                return
               } else {
                 callSendAPI(sender_psid, {
-                  'text': answer
+                  'text': answer + " hiiiiii"
                 });
+                return
               }
             })
             .catch(err => {
@@ -203,10 +208,12 @@ function handleMessage(sender_psid, received_message) {
                         callSendAPI(sender_psid, {
                           'text': "No response from watson"
                         })
+                        return
                       } else {
                         callSendAPI(sender_psid, {
-                          'text': answer
-                        });
+                          'text': answer + " nfogsogg"
+                        })
+                        return
                       }
                     })
                 })
@@ -214,6 +221,7 @@ function handleMessage(sender_psid, received_message) {
 
         } else if (received_message.attachments) {
           //console.log(received_message.attachments[0].payload.url);
+          console.log("attachments");
 
           let imageUrl = received_message.attachments[0].payload.url
           // let buff = new Buffer.from(data)
@@ -222,30 +230,56 @@ function handleMessage(sender_psid, received_message) {
           //   'image': base64data
           // }
 
-          let jsonImage
-
-
           encode(imageUrl)
             .then(jsonImage => {
 
-              request.post({
-                url: "https://flask-reliable-ardvark.cfapps.io/predict",
-                json: {
-                  image: jsonImage
-                }
-              }, function(error, response, body) {
-                console.log(body);
-              });
+
+              var reqq = https.request({
+                host: "https://flask-reliable-ardvark.cfapps.io/",
+                path: "predict",
+                method: 'POST',
+              }, function(response) {
+                var str = '';
+                response.on('data', function(chunk) {
+                  str += chunk;
+                });
+                response.on('end')
+                reqq.write({
+                  "image": jsonImage
+                });
+                reqq.end();
+                console.log(str);
+
+              })
+
+
+
+              // request.post({
+              //   url: "https://flask-reliable-ardvark.cfapps.io/predict",
+              //   json: {
+              //     image: jsonImage
+              //   },
+              //   retryDelay: 600000
+              // }, function(error, response, body) {
+              //   if (!error) {
+              //     console.log(body);
+              //     console.log("Handle then");
+              //     var parsedjson = JSON.parse(body)
+              //     bird = parsedjson.Result
+              //     status = 'true'
+              //   } else {
+              //     console.log(error);
+              //   }
+              //
+              //   // handleMessage(sender_psid, {
+              //   //   'text': "ok"
+              //   // })
+              //   return
+              // });
 
 
             })
-
-
-
-
-
-
-
+          // deh lel colorization
           // callSendAPI(sender_psid, {
           //   "attachment": {
           //     "type": "image",
@@ -255,28 +289,15 @@ function handleMessage(sender_psid, received_message) {
           //     }
           //   }
           // })
-          // Send image to network
-          //get response from network
-          //send response to watson
-          // Success or fail and Bird = birdtype
 
-          bird = 'parrot'
-          status = 'true'
-
-          // handleMessage(sender_psid, {
-          //   'text': "ok"
-          // })
         }
       }
 
-    } // end of el for loop = sender not found = create new then add:
-    // sender_id does not exists: 3ayzeen n add it fel senderArr
-    //then n create a session for it and add it to the sessArr
+    }
     if (!flag) {
 
       senderArr.push(sender_psid);
       creatSess(sessArr.length) // 3ashan ana 3ayza a5er index.....
-        // han excute you ezay ba2a ya cutie?
         .then(hi => {
           sendMs(received_message.text, sessArr[i])
             .then(answer => {
@@ -285,15 +306,19 @@ function handleMessage(sender_psid, received_message) {
                 callSendAPI(sender_psid, {
                   'text': "No response from watson"
                 })
+                return
               } else {
                 callSendAPI(sender_psid, {
-                  'text': answer
-                });
+                  'text': answer + "ngiogn"
+                })
+                return
               }
             })
         })
     }
   }
+
+
 }
 
 function callSendAPI(sender_psid, response) {
