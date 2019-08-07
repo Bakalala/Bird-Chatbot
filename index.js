@@ -3,7 +3,6 @@ const PAGE_ACCESS_TOKEN = 'EAAGM47EckQcBAPFRZAXZBap5vqEcxIV3jP4GCWzaZBFq6P28ZAgZ
 var express = require('express')
 var request = require('request')
 var base64 = require('node-base64-image')
-var fs = require('fs')
 var https = require('https')
 var bodyParser = require("body-parser")
 var senderArr = [];
@@ -153,7 +152,6 @@ function sendMs(word, session_id) {
   })
 }
 
-
 function handleMessage(sender_psid, received_message) {
 
 
@@ -167,7 +165,7 @@ function handleMessage(sender_psid, received_message) {
         sendMs(received_message.text, sessArr[0])
           .then(answer => {
             callSendAPI(sender_psid, {
-              'text': answer + " looooool"
+              'text': answer
             });
           })
       })
@@ -183,8 +181,7 @@ function handleMessage(sender_psid, received_message) {
 
           // Create the payload for a basic text message, which
           // will be added to the body of our request to the Send API
-          sendMs(received_message.text, sessArr[index])
-            .then(answer => {
+          sendMs(received_message.text, sessArr[index]).then(answer => {
               if (answer == null) {
                 // If no text is returned, action from context is required
                 callSendAPI(sender_psid, {
@@ -193,7 +190,7 @@ function handleMessage(sender_psid, received_message) {
                 return
               } else {
                 callSendAPI(sender_psid, {
-                  'text': answer + " hiiiiii"
+                  'text': answer
                 });
                 return
               }
@@ -211,7 +208,7 @@ function handleMessage(sender_psid, received_message) {
                         return
                       } else {
                         callSendAPI(sender_psid, {
-                          'text': answer + " nfogsogg"
+                          'text': answer
                         })
                         return
                       }
@@ -220,75 +217,27 @@ function handleMessage(sender_psid, received_message) {
             })
 
         } else if (received_message.attachments) {
-          //console.log(received_message.attachments[0].payload.url);
-          console.log("attachments");
 
-          let imageUrl = received_message.attachments[0].payload.url
-          // let buff = new Buffer.from(data)
-          // let base64data = buff.toString('base64') // holds the base64 image
-          // var jsonImage = {
-          //   'image': base64data
-          // }
+          // var imageUrl = received_message.attachments[0].payload.url
+          // encode(imageUrl)
+          //   .then(jsonImage => {
+          //     uploadToNetwork(jsonImage)
+          //       .then(function() {
+          //         handleMessage(sender_psid, {
+          //           'text': "ok"
+          //         })
+          //       })
+          //   })
 
-          encode(imageUrl)
-            .then(jsonImage => {
-
-
-              var reqq = https.request({
-                host: "https://flask-reliable-ardvark.cfapps.io/",
-                path: "predict",
-                method: 'POST',
-              }, function(response) {
-                var str = '';
-                response.on('data', function(chunk) {
-                  str += chunk;
-                });
-                response.on('end')
-                reqq.write({
-                  "image": jsonImage
-                });
-                reqq.end();
-                console.log(str);
-
-              })
-
-
-
-              // request.post({
-              //   url: "https://flask-reliable-ardvark.cfapps.io/predict",
-              //   json: {
-              //     image: jsonImage
-              //   },
-              //   retryDelay: 600000
-              // }, function(error, response, body) {
-              //   if (!error) {
-              //     console.log(body);
-              //     console.log("Handle then");
-              //     var parsedjson = JSON.parse(body)
-              //     bird = parsedjson.Result
-              //     status = 'true'
-              //   } else {
-              //     console.log(error);
-              //   }
-              //
-              //   // handleMessage(sender_psid, {
-              //   //   'text': "ok"
-              //   // })
-              //   return
-              // });
-
-
-            })
-          // deh lel colorization
-          // callSendAPI(sender_psid, {
-          //   "attachment": {
-          //     "type": "image",
-          //     "payload": {
-          //       "url": received_message.attachments[0].payload.url,
-          //       "is_reusable": true
-          //     }
-          //   }
-          // })
+          callSendAPI(sender_psid, {
+            "attachment": {
+              "type": "image",
+              "payload": {
+                "url": imagetest,
+                "is_reusable": true
+              }
+            }
+          })
 
         }
       }
@@ -309,7 +258,7 @@ function handleMessage(sender_psid, received_message) {
                 return
               } else {
                 callSendAPI(sender_psid, {
-                  'text': answer + "ngiogn"
+                  'text': answer
                 })
                 return
               }
@@ -345,12 +294,12 @@ function callSendAPI(sender_psid, response) {
   });
 }
 
-function encode(data) {
+function encode(imageUrl) {
   var options = {
     string: true
   }
   return new Promise(function(resolve, reject) {
-    base64.encode(data, options, function(err, image) {
+    base64.encode(imageUrl, options, function(err, image) {
       if (err) {
         reject(err)
       } else {
@@ -361,5 +310,50 @@ function encode(data) {
 }
 
 
+function uploadToNetwork(jsonImage) {
+  return new Promise(function(resolve, reject) {
+
+    request.post({
+      url: "https://flask-reliable-ardvark.cfapps.io/predict",
+      json: {
+        image: jsonImage
+      },
+    }, function(error, response, body) {
+      if (!error) {
+        console.log(body);
+        var parsedjson = JSON.parse(body)
+        bird = parsedjson.Result
+        status = 'true'
+        resolve()
+      } else {
+        status = 'false'
+        console.log(error);
+        reject()
+      }
+    })
+  })
+}
+
 
 app.listen(process.env.PORT || 1337, () => console.log('webhook is listening'));
+
+
+
+
+/*
+
+
+all .get / .post put in its own 'express file'
+Watson module
+Messenger module : Message Handles / Send Api for facebook
+Image Encoding / Decoding
+Error logging and auditing
+
+save context in another file
+
+implement array in a database
+
+
+properties file for passswords and tokens
+use of variable/let/constants
+*/
