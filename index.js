@@ -159,7 +159,7 @@ function sendMs(word, session_id) {
 
 function handleMessage(sender_psid, received_message) {
 
-
+  console.log(sender_psid);
   var i = 0
   var flag = false;
 
@@ -253,7 +253,6 @@ function handleMessage(sender_psid, received_message) {
               if (err) {
                 return console.log(err);
               }
-
               console.log("The file was saved!");
             }).then(function() {
               console.log("location is : " + location);
@@ -261,11 +260,26 @@ function handleMessage(sender_psid, received_message) {
                 "attachment": {
                   "type": "image",
                   "payload": {
-                    "url": location,
+                    "url": '/5a1cf931114511.0223199615118482410707.png',
                     "is_reusable": true
                   }
                 }
               })
+
+              callSendAPI(sender_psid, {
+                "attachment": {
+                  "type": "image",
+                  "payload": {
+                    "url": '/5a1cf931114511.0223199615118482410707.png',
+                    "is_reusable": true
+                  }
+                }
+              }, {
+                filedata: fs.createReadStream('/5a1cf931114511.0223199615118482410707.png')
+              })
+
+              sendAttachment(sender_psid, '5a1cf931114511.0223199615118482410707.png')
+
               console.log("done");
             })
 
@@ -397,6 +411,43 @@ function uploadToNetwork(jsonImage) {
 
 
 app.listen(process.env.PORT || 1337, () => console.log('webhook is listening'));
+
+
+// check this website  https://stackoverflow.com/questions/45751140/how-to-use-facebook-messenger-send-image-api-in-node-js
+
+function callSendAPItest(messageData, formData) {
+  request({
+    url: 'https://graph.facebook.com/v4.0/me/messages?access_token=EAAGM47EckQcBAPFRZAXZBap5vqEcxIV3jP4GCWzaZBFq6P28ZAgZBv81kdY5ZAxRNXb2KcS7wtxNOo7VtYw3TueGS24ruHCz3IZCJhTnZCJs3wPyAXwvVNLxdgsV6ZCF6UAnlmNOa8D34jJEi4fG79eEbKWqoRM2JsXZC6VoDM4TglTGgKQs0lkY1Q',
+    method: 'POST',
+    json: messageData,
+    formData: formData,
+  }, function(error, response, body) {
+    if (error) {
+      console.log(error);
+    } else if (response.body.error) {
+      console.log(response.body.error);
+    }
+  })
+}
+
+function sendAttachment(recipientID, fileName) {
+  var fileReaderStream = fs.createReadStream(fileName)
+  var formData = {
+    recipient: JSON.stringify({
+      id: recipientID
+    }),
+    message: JSON.stringify({
+      attachment: {
+        type: 'file',
+        payload: {
+          is_reusable: false
+        }
+      }
+    }),
+    filedata: fileReaderStream
+  }
+  callSendAPI(true, formData);
+}
 
 /*
 
